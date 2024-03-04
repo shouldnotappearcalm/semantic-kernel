@@ -225,23 +225,6 @@ dev = ["cogapp", "pre-commit", "pytest", "wheel"]
 tests = ["pytest"]
 
 [[package]]
-name = "asgiref"
-version = "3.7.2"
-description = "ASGI specs, helper code, and adapters"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "asgiref-3.7.2-py3-none-any.whl", hash = "sha256:89b2ef2247e3b562a16eef663bc0e2e703ec6468e2fa8a5cd61cd449786d4f6e"},
-    {file = "asgiref-3.7.2.tar.gz", hash = "sha256:9e0ce3aa93a819ba5b45120216b23878cf6e8525eb3848653452b4192b92afed"},
-]
-
-[package.dependencies]
-typing-extensions = {version = ">=4", markers = "python_version < \"3.11\""}
-
-[package.extras]
-tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
-
-[[package]]
 name = "asttokens"
 version = "2.4.1"
 description = "Annotate AST trees with source code positions"
@@ -1977,23 +1960,6 @@ referencing = ">=0.28.0,<0.32.0"
 requests = ">=2.31.0,<3.0.0"
 
 [[package]]
-name = "jsonschema-spec"
-version = "0.2.4"
-description = "JSONSchema Spec with object-oriented paths"
-optional = false
-python-versions = ">=3.8.0,<4.0.0"
-files = [
-    {file = "jsonschema_spec-0.2.4-py3-none-any.whl", hash = "sha256:e6dcf7056734ec6854f7888da6c08ce6c421f28aeeddce96bb90de0fb6d711ef"},
-    {file = "jsonschema_spec-0.2.4.tar.gz", hash = "sha256:873e396ad1ba6edf9f52d6174c110d4fafb7b5f5894744246a53fe75e5251ec2"},
-]
-
-[package.dependencies]
-pathable = ">=0.4.1,<0.5.0"
-PyYAML = ">=5.1"
-referencing = ">=0.28.0,<0.31.0"
-requests = ">=2.31.0,<3.0.0"
-
-[[package]]
 name = "jsonschema-specifications"
 version = "2023.7.1"
 description = "The JSON Schema meta-schemas and vocabularies, exposed as a Registry"
@@ -2805,20 +2771,19 @@ datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
 
 [[package]]
 name = "openapi-core"
-version = "0.18.2"
+version = "0.19.0"
 description = "client-side and server-side support for the OpenAPI Specification v3"
 optional = false
 python-versions = ">=3.8.0,<4.0.0"
 files = [
-    {file = "openapi_core-0.18.2-py3-none-any.whl", hash = "sha256:ec13d366766d564450de60374f59feb0b5ccb447aed642cdf0f1ecfcc6fbe80a"},
-    {file = "openapi_core-0.18.2.tar.gz", hash = "sha256:d4cc50f3ee03ae46313c83e97c6fbfe7e7ae9686741135eb0e4ed49e9d8ff08a"},
+    {file = "openapi_core-0.19.0-py3-none-any.whl", hash = "sha256:fd313562eae5af549ee3351b3248358a72b1dfb655b6626f86ca4d4ee72d95de"},
+    {file = "openapi_core-0.19.0.tar.gz", hash = "sha256:9c0a157ca8e21a1205f95e0495557a45ad2a33bc8f0f9002406d671420b0920a"},
 ]
 
 [package.dependencies]
-asgiref = ">=3.6.0,<4.0.0"
 isodate = "*"
 jsonschema = ">=4.18.0,<5.0.0"
-jsonschema-spec = ">=0.2.3,<0.3.0"
+jsonschema-path = ">=0.3.1,<0.4.0"
 more-itertools = "*"
 openapi-schema-validator = ">=0.6.0,<0.7.0"
 openapi-spec-validator = ">=0.7.1,<0.8.0"
@@ -2829,9 +2794,10 @@ werkzeug = "*"
 aiohttp = ["aiohttp (>=3.0)", "multidict (>=6.0.4,<7.0.0)"]
 django = ["django (>=3.0)"]
 falcon = ["falcon (>=3.0)"]
+fastapi = ["fastapi (>=0.108.0,<0.109.0)"]
 flask = ["flask"]
 requests = ["requests"]
-starlette = ["starlette (>=0.26.1,<0.32.0)"]
+starlette = ["aioitertools (>=0.11.0,<0.12.0)", "starlette (>=0.26.1,<0.38.0)"]
 
 [[package]]
 name = "openapi-schema-validator"
@@ -4089,6 +4055,7 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
+    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -6091,4 +6058,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "3f8eb88c19f3559a8b47d0a13f5e093446d6735e1de5110eb684975a798d17b5"
+content-hash = "f00eccfd187f89f5441a63e1b06a1fca75d94eca9704e0546b2b4921a44b0c46"

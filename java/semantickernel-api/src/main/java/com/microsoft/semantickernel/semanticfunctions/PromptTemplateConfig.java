@@ -8,13 +8,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.semantickernel.exceptions.SKException;
 import com.microsoft.semantickernel.orchestration.PromptExecutionSettings;
-import com.microsoft.semantickernel.plugin.KernelReturnParameterMetadata;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
 import javax.annotation.Nullable;
 
 /**
@@ -38,6 +37,7 @@ public class PromptTemplateConfig {
      */
     public static final String SEMANTIC_KERNEL_TEMPLATE_FORMAT = "semantic-kernel";
 
+    private final int schema;
     @Nullable
     private final String name;
     @Nullable
@@ -63,7 +63,7 @@ public class PromptTemplateConfig {
             SEMANTIC_KERNEL_TEMPLATE_FORMAT,
             "",
             Collections.emptyList(),
-            new OutputVariable("out", String.class.getName()),
+            new OutputVariable(String.class.getName(), "out"),
             Collections.emptyMap());
     }
 
@@ -89,6 +89,7 @@ public class PromptTemplateConfig {
         @Nullable @JsonProperty("input_variables") List<InputVariable> inputVariables,
         @Nullable @JsonProperty("output_variable") OutputVariable outputVariable,
         @Nullable @JsonProperty("execution_settings") Map<String, PromptExecutionSettings> executionSettings) {
+        this.schema = schema;
         this.name = name;
         this.template = template;
         if (templateFormat == null) {
@@ -101,7 +102,9 @@ public class PromptTemplateConfig {
         } else {
             this.inputVariables = new ArrayList<>(inputVariables);
         }
-        this.outputVariable = outputVariable;
+        this.outputVariable = outputVariable != null
+            ? outputVariable
+            : new OutputVariable(String.class.getName(), "out");
         if (executionSettings == null) {
             this.executionSettings = new HashMap<>();
         } else {
@@ -195,18 +198,11 @@ public class PromptTemplateConfig {
      *
      * @return The parameters metadata.
      */
-    public List<KernelParameterMetadata<?>> getKernelParametersMetadata() {
+    public List<InputVariable> getKernelParametersMetadata() {
         if (inputVariables == null) {
             return Collections.emptyList();
         }
-        return inputVariables
-            .stream()
-            .map(inputVariable -> new KernelParameterMetadata<>(
-                inputVariable.getName(),
-                inputVariable.getDescription(),
-                inputVariable.getTypeClass(),
-                inputVariable.getDefaultValue(), inputVariable.isRequired()))
-            .collect(Collectors.toList());
+        return Collections.unmodifiableList(inputVariables);
     }
 
     /**
@@ -214,12 +210,12 @@ public class PromptTemplateConfig {
      *
      * @return The return parameter metadata.
      */
-    public KernelReturnParameterMetadata<?> getKernelReturnParameterMetadata() {
+    public OutputVariable<?> getKernelReturnParameterMetadata() {
         if (outputVariable == null) {
-            return new KernelReturnParameterMetadata<>("", String.class);
+            return new OutputVariable<>("", String.class);
         }
 
-        return new KernelReturnParameterMetadata<>(
+        return new OutputVariable<>(
             outputVariable.getDescription(),
             outputVariable.getType());
     }
@@ -296,12 +292,60 @@ public class PromptTemplateConfig {
     }
 
     /**
+     * Get the schema version of the prompt template config.
+     *
+     * @return The schema version of the prompt template config.
+     */
+    public int getSchema() {
+        return schema;
+    }
+
+    /**
      * Create a builder for a prompt template config which is a clone of the current object.
      *
      * @return The prompt template config builder.
      */
     public Builder copy() {
         return new Builder(this);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, template, templateFormat, description, inputVariables,
+            outputVariable, executionSettings);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!getClass().isInstance(obj)) {
+            return false;
+        }
+        final PromptTemplateConfig other = (PromptTemplateConfig) obj;
+        if (!Objects.equals(this.name, other.name)) {
+            return false;
+        }
+        if (!Objects.equals(this.template, other.template)) {
+            return false;
+        }
+        if (!Objects.equals(this.description, other.description)) {
+            return false;
+        }
+        if (!Objects.equals(this.templateFormat, other.templateFormat)) {
+            return false;
+        }
+        if (!Objects.equals(this.inputVariables, other.inputVariables)) {
+            return false;
+        }
+        if (!Objects.equals(this.outputVariable, other.outputVariable)) {
+            return false;
+        }
+        return Objects.equals(this.executionSettings, other.executionSettings);
     }
 
     /**
@@ -318,7 +362,7 @@ public class PromptTemplateConfig {
         private String description = null;
         private List<InputVariable> inputVariables = new ArrayList<>();
         @Nullable
-        private OutputVariable outputVariable = new OutputVariable("out", String.class.getName());
+        private OutputVariable outputVariable;
         private Map<String, PromptExecutionSettings> executionSettings = new HashMap<>();
 
         private Builder() {
@@ -406,7 +450,7 @@ public class PromptTemplateConfig {
          * @param outputVariable The output variable of the prompt template config.
          * @return {@code this} prompt template config.
          */
-        public Builder withOutputVariable(OutputVariable outputVariable) {
+        public Builder withOutputVariable(OutputVariable<?> outputVariable) {
             this.outputVariable = outputVariable;
             return this;
         }

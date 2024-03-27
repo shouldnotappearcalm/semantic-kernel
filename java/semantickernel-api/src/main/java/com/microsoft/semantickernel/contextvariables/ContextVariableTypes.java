@@ -9,6 +9,7 @@ import com.microsoft.semantickernel.contextvariables.converters.CompletionUsageC
 import com.microsoft.semantickernel.contextvariables.converters.DateTimeContextVariableTypeConverter;
 import com.microsoft.semantickernel.contextvariables.converters.InstantContextVariableTypeConverter;
 import com.microsoft.semantickernel.contextvariables.converters.NumberVariableContextVariableTypeConverter;
+import com.microsoft.semantickernel.contextvariables.converters.PrimitiveBooleanVariableContextVariableTypeConverter;
 import com.microsoft.semantickernel.contextvariables.converters.StringVariableContextVariableTypeConverter;
 import com.microsoft.semantickernel.contextvariables.converters.TextContentVariableContextVariableTypeConverter;
 import com.microsoft.semantickernel.contextvariables.converters.VoidVariableContextVariableTypeConverter;
@@ -29,7 +30,6 @@ public class ContextVariableTypes {
     static {
         List<ContextVariableTypeConverter<?>> types = Arrays.asList(
             new CharacterVariableContextVariableTypeConverter(),
-            new BooleanVariableContextVariableTypeConverter(),
             new ChatHistoryVariableContextVariableTypeConverter(),
             new TextContentVariableContextVariableTypeConverter(),
             new StringVariableContextVariableTypeConverter(),
@@ -39,6 +39,9 @@ public class ContextVariableTypes {
             new DateTimeContextVariableTypeConverter(),
             new InstantContextVariableTypeConverter(),
             new CompletionUsageContextVariableTypeConverter(),
+
+            new BooleanVariableContextVariableTypeConverter(),
+            new PrimitiveBooleanVariableContextVariableTypeConverter(),
 
             new NumberVariableContextVariableTypeConverter<>(Byte.class, Byte::parseByte,
                 Number::byteValue),
@@ -238,5 +241,26 @@ public class ContextVariableTypes {
      */
     public void putConverters(ContextVariableTypes contextVariableTypes) {
         this.variableTypes.putAll(contextVariableTypes.variableTypes);
+    }
+
+    /**
+     * Create a context variable of the given value.
+     *
+     * @param value The value to create a context variable of.
+     * @param <T>   The type of the context variable.
+     * @return The context variable of the given value.
+     */
+    public <T> ContextVariable<T> contextVariableOf(T value) {
+        if (value instanceof ContextVariable) {
+            return (ContextVariable<T>) value;
+        }
+
+        ContextVariableType<?> type = getVariableTypeForClass(value.getClass());
+
+        if (type == null) {
+            throw new SKException("Unknown type: " + value.getClass());
+        }
+
+        return (ContextVariable<T>) type.of(value);
     }
 }

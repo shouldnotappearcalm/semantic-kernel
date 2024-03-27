@@ -2,6 +2,7 @@
 package com.microsoft.semantickernel.implementation.templateengine.tokenizer;
 
 import com.microsoft.semantickernel.Kernel;
+import com.microsoft.semantickernel.contextvariables.ContextVariableTypes;
 import com.microsoft.semantickernel.exceptions.SKException;
 import com.microsoft.semantickernel.implementation.Verify;
 import com.microsoft.semantickernel.implementation.templateengine.tokenizer.blocks.Block;
@@ -139,12 +140,19 @@ public class DefaultPromptTemplate implements PromptTemplate {
         @Nullable KernelFunctionArguments arguments,
         @Nullable InvocationContext context) {
 
+        ContextVariableTypes types;
+
+        if (context != null) {
+            types = context.getContextVariableTypes();
+        } else {
+            types = new ContextVariableTypes();
+        }
         return Flux
             .fromIterable(blocks)
             .concatMap(block -> {
                 if (block instanceof TextRendering) {
                     return Mono.just(
-                        ((TextRendering) block).render(arguments));
+                        ((TextRendering) block).render(types, arguments));
                 } else if (block instanceof CodeRendering) {
                     return ((CodeRendering) block).renderCodeAsync(kernel, arguments, context);
                 } else {

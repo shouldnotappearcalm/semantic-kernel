@@ -49,6 +49,9 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * OpenAI chat completion service.
+ */
 public class OpenAIChatCompletion implements ChatCompletionService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenAIChatCompletion.class);
@@ -67,6 +70,11 @@ public class OpenAIChatCompletion implements ChatCompletionService {
         this.modelId = modelId;
     }
 
+    /**
+     * Create a new instance of {@link OpenAIChatCompletion.Builder}.
+     *
+     * @return a new instance of {@link OpenAIChatCompletion.Builder}
+     */
     public static OpenAIChatCompletion.Builder builder() {
         return new OpenAIChatCompletion.Builder();
     }
@@ -191,11 +199,18 @@ public class OpenAIChatCompletion implements ChatCompletionService {
                                         ChatCompletionsFunctionToolCall functionToolCall = (ChatCompletionsFunctionToolCall) toolCall;
                                         if (kernel == null) {
                                             return Mono
-                                                .<List<ChatRequestMessage>>error(new SKException(
+                                                .error(new SKException(
                                                     "A tool call was requested, but no kernel was provided to the invocation, this is a unsupported configuration"));
                                         }
 
-                                        return invokeFunctionTool(kernel, functionToolCall)
+                                        ContextVariableTypes contextVariableTypes = invocationContext == null
+                                            ? new ContextVariableTypes()
+                                            : invocationContext.getContextVariableTypes();
+
+                                        return invokeFunctionTool(
+                                            kernel,
+                                            functionToolCall,
+                                            contextVariableTypes)
                                             .map(functionResult -> {
                                                 // Add chat request tool message to the chat options
                                                 ChatRequestMessage requestToolMessage = new ChatRequestToolMessage(
@@ -225,24 +240,31 @@ public class OpenAIChatCompletion implements ChatCompletionService {
     @SuppressWarnings("StringSplitter")
     private Mono<FunctionResult<String>> invokeFunctionTool(
         Kernel kernel,
-        ChatCompletionsFunctionToolCall toolCall) {
+        ChatCompletionsFunctionToolCall toolCall,
+        ContextVariableTypes contextVariableTypes) {
 
         try {
             OpenAIFunctionToolCall openAIFunctionToolCall = extractOpenAIFunctionToolCall(toolCall);
+            String pluginName = openAIFunctionToolCall.getPluginName();
+            if (pluginName == null || pluginName.isEmpty()) {
+                return Mono.error(
+                    new SKException("Plugin name is required for function tool call"));
+            }
+
             KernelFunction<?> function = kernel.getFunction(
-                openAIFunctionToolCall.getPluginName(),
+                pluginName,
                 openAIFunctionToolCall.getFunctionName());
 
             return function
                 .invokeAsync(kernel)
                 .withArguments(openAIFunctionToolCall.getArguments())
-                .withResultType(ContextVariableTypes.getGlobalVariableTypeForClass(
-                    String.class));
+                .withResultType(contextVariableTypes.getVariableTypeForClass(String.class));
         } catch (JsonProcessingException e) {
             return Mono.error(new SKException("Failed to parse tool arguments"));
         }
     }
 
+    @SuppressWarnings("StringSplitter")
     private OpenAIFunctionToolCall extractOpenAIFunctionToolCall(
         ChatCompletionsFunctionToolCall toolCall) throws JsonProcessingException {
 
@@ -482,6 +504,9 @@ public class OpenAIChatCompletion implements ChatCompletionService {
         return modelId;
     }
 
+    /**
+     * Builder for creating a new instance of {@link OpenAIChatCompletion}.
+     */
     public static class Builder extends ChatCompletionService.Builder {
 
         @Override

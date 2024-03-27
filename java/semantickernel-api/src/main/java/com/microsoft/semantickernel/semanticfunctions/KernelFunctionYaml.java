@@ -29,8 +29,10 @@ public class KernelFunctionYaml {
     public static <T> KernelFunction<T> fromPromptYaml(
         String yaml,
         @Nullable PromptTemplateFactory promptTemplateFactory) throws IOException {
-        InputStream targetStream = new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8));
-        return fromYaml(targetStream, promptTemplateFactory);
+        try (InputStream targetStream = new ByteArrayInputStream(
+            yaml.getBytes(StandardCharsets.UTF_8))) {
+            return fromYaml(targetStream, promptTemplateFactory);
+        }
     }
 
     /**
@@ -44,8 +46,7 @@ public class KernelFunctionYaml {
      */
     public static <T> KernelFunction<T> fromPromptYaml(
         String yaml) throws IOException {
-        InputStream targetStream = new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8));
-        return fromYaml(targetStream, null);
+        return fromPromptYaml(yaml, null);
     }
 
     /**
@@ -58,9 +59,10 @@ public class KernelFunctionYaml {
      * @throws IOException If an error occurs while reading the YAML.
      */
     public static <T> KernelFunction<T> fromYaml(Path filePath) throws IOException {
-        InputStream inputStream = Thread.currentThread().getContextClassLoader()
-            .getResourceAsStream(filePath.toString());
-        return fromYaml(inputStream, null);
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try (InputStream inputStream = classLoader.getResourceAsStream(filePath.toString())) {
+            return fromYaml(inputStream, null);
+        }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

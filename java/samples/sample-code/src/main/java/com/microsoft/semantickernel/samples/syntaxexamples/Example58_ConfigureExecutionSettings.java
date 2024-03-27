@@ -62,7 +62,7 @@ public class Example58_ConfigureExecutionSettings {
                         .withMaxTokens(60)
                         .withTemperature(0.7)
                         .build())
-                .withOutputVariable(new OutputVariable("result", "java.lang.String"))
+                .withOutputVariable(new OutputVariable<>("result", String.class))
                 .build())
             .block();
 
@@ -97,7 +97,7 @@ public class Example58_ConfigureExecutionSettings {
             .createFromPrompt(promptConfig)
             .build();
 
-        result = kernel.invokeAsync(func).block();
-        System.out.println(result.getResult());
+        var result2 = kernel.invokeAsync(func).block();
+        System.out.println(result2.getResult());
     }
 }

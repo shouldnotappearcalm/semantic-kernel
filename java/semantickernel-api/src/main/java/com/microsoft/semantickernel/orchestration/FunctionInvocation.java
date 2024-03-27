@@ -102,7 +102,10 @@ public class FunctionInvocation<T> extends Mono<FunctionResult<T>> {
         function
             .invokeAsync(
                 kernel,
-                KernelFunctionArguments.builder().withVariables(arguments).build(),
+                KernelFunctionArguments
+                    .builder()
+                    .withVariables(arguments)
+                    .build(),
                 null,
                 new InvocationContext(context))
             .handle(convertToType(variableType))
@@ -173,7 +176,19 @@ public class FunctionInvocation<T> extends Mono<FunctionResult<T>> {
             .withArguments(arguments)
             .addKernelHooks(hooks)
             .withPromptExecutionSettings(promptExecutionSettings)
-            .withToolCallBehavior(toolCallBehavior);
+            .withToolCallBehavior(toolCallBehavior)
+            .withTypes(contextVariableTypes);
+    }
+
+    /**
+     * Supply the result type of function invocation. Uses the global context variable types.
+     *
+     * @param resultType The arguments to supply to the function invocation.
+     * @param <U>        The type of the result of the function invocation.
+     * @return A new {@code FunctionInvocation} for fluent chaining.
+     */
+    public <U> FunctionInvocation<U> withResultType(Class<U> resultType) {
+        return withResultType(ContextVariableTypes.getGlobalVariableTypeForClass(resultType));
     }
 
     /**

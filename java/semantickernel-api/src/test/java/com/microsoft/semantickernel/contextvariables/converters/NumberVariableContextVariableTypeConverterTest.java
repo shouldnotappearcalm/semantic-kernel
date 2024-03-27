@@ -3,6 +3,7 @@ package com.microsoft.semantickernel.contextvariables.converters;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.microsoft.semantickernel.contextvariables.ContextVariable;
 import com.microsoft.semantickernel.contextvariables.ContextVariableType;
 import com.microsoft.semantickernel.contextvariables.ContextVariableTypeConverter;
 import com.microsoft.semantickernel.contextvariables.ContextVariableTypes;
@@ -19,7 +20,7 @@ public class NumberVariableContextVariableTypeConverterTest {
             .getGlobalVariableTypeForClass(Integer.class);
         ContextVariableTypeConverter<Integer> instance = type.getConverter();
         Object expResult = "1";
-        Object result = instance.toObject(1, String.class);
+        Object result = instance.toObject(new ContextVariableTypes(), 1, String.class);
         assertEquals(expResult, result);
     }
 
@@ -77,7 +78,7 @@ public class NumberVariableContextVariableTypeConverterTest {
             .getGlobalVariableTypeForClass(Integer.class);
         ContextVariableTypeConverter<Integer> instance = type.getConverter();
         String expResult = "123";
-        String result = instance.toPromptString(num);
+        String result = instance.toPromptString(new ContextVariableTypes(), num);
         assertEquals(expResult, result);
     }
 
@@ -88,8 +89,15 @@ public class NumberVariableContextVariableTypeConverterTest {
             .getGlobalVariableTypeForClass(Integer.class);
         ContextVariableTypeConverter<Integer> instance = type.getConverter();
         String expResult = "";
-        String result = instance.toPromptString(num);
+        String result = instance.toPromptString(new ContextVariableTypes(), num);
         assertEquals(expResult, result);
     }
 
+    @Test
+    void testFromStringToDouble() {
+        Object s = "12.0";
+        double expResult = 12.0d;
+        ContextVariable<Double> result = ContextVariable.convert(s, double.class, null);
+        assertEquals(expResult, result.getValue());
+    }
 }

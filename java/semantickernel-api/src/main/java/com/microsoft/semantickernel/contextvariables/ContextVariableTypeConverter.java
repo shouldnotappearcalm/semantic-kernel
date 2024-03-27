@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 package com.microsoft.semantickernel.contextvariables;
 
+import com.microsoft.semantickernel.exceptions.SKException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,9 +23,13 @@ public class ContextVariableTypeConverter<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(
         ContextVariableTypeConverter.class);
 
+    public interface ToPromptStringFunction<T> {
+        String toPromptString(ContextVariableTypes types, T t);
+    }
+
     private final Class<T> clazz;
     private final Function<Object, T> fromObject;
-    private final Function<T, String> toPromptString;
+    private final ToPromptStringFunction<T> toPromptString;
     private final Function<String, T> fromPromptString;
     private final List<Converter<T, ?>> toObjects;
 
@@ -50,6 +56,44 @@ public class ContextVariableTypeConverter<T> {
      * @param fromObject       a function to convert an object to the type
      * @param toPromptString   a function to convert the type to a prompt string
      * @param fromPromptString a function to convert a prompt string to the type
+     */
+    public ContextVariableTypeConverter(
+        Class<T> clazz,
+        Function<Object, T> fromObject,
+        ToPromptStringFunction<T> toPromptString,
+        Function<String, T> fromPromptString) {
+        this(clazz, fromObject, toPromptString, fromPromptString, Collections.emptyList());
+    }
+
+    /**
+     * Create a new context variable type converter.
+     *
+     * @param clazz            the class of the type
+     * @param fromObject       a function to convert an object to the type
+     * @param toPromptString   a function to convert the type to a prompt string
+     * @param fromPromptString a function to convert a prompt string to the type
+     * @param toObjects        a list of converters to convert the type to other types
+     */
+    public ContextVariableTypeConverter(
+        Class<T> clazz,
+        Function<Object, T> fromObject,
+        ToPromptStringFunction<T> toPromptString,
+        Function<String, T> fromPromptString,
+        List<Converter<T, ?>> toObjects) {
+        this.clazz = clazz;
+        this.fromObject = fromObject;
+        this.toPromptString = toPromptString;
+        this.fromPromptString = fromPromptString;
+        this.toObjects = new ArrayList<>(toObjects);
+    }
+
+    /**
+     * Create a new context variable type converter.
+     *
+     * @param clazz            the class of the type
+     * @param fromObject       a function to convert an object to the type
+     * @param toPromptString   a function to convert the type to a prompt string
+     * @param fromPromptString a function to convert a prompt string to the type
      * @param toObjects        a list of converters to convert the type to other types
      */
     public ContextVariableTypeConverter(
@@ -60,7 +104,7 @@ public class ContextVariableTypeConverter<T> {
         List<Converter<T, ?>> toObjects) {
         this.clazz = clazz;
         this.fromObject = fromObject;
-        this.toPromptString = toPromptString;
+        this.toPromptString = (types, t) -> toPromptString.apply(t);
         this.fromPromptString = fromPromptString;
         this.toObjects = new ArrayList<>(toObjects);
     }
@@ -75,7 +119,7 @@ public class ContextVariableTypeConverter<T> {
      */
     @Nullable
     @SuppressWarnings("unchecked")
-    public <U> U toObject(@Nullable Object t, Class<U> clazz) {
+    public <U> U toObject(ContextVariableTypes types, @Nullable Object t, Class<U> clazz) {
         if (t == null) {
             return null;
         }
@@ -127,11 +171,11 @@ public class ContextVariableTypeConverter<T> {
      * @param t the type to convert
      * @return the prompt string
      */
-    public String toPromptString(@Nullable T t) {
+    public String toPromptString(ContextVariableTypes types, @Nullable T t) {
         if (t == null) {
             return "";
         }
-        return toPromptString.apply(t);
+        return toPromptString.toPromptString(types, t);
     }
 
     /**
@@ -227,6 +271,122 @@ public class ContextVariableTypeConverter<T> {
         @Override
         public Class<U> getTargetType() {
             return targetType;
+        }
+    }
+
+    /**
+     * Create a new builder for a context variable type converter.
+     *
+     * @param <T>   the type of the context variable
+     * @param clazz the class of the type
+     * @return the builder
+     */
+    public static <T> Builder<T> builder(Class<T> clazz) {
+        return new Builder<>(clazz);
+    }
+
+    /**
+     * A builder for a context variable type converter.
+     */
+    public static class Builder<T> {
+
+        private final Class<T> clazz;
+        private Function<Object, T> fromObject;
+        private ToPromptStringFunction<T> toPromptString;
+        private Function<String, T> fromPromptString;
+
+        /**
+         * Create a new builder for a context variable type converter.
+         *
+         * @param clazz the class of the type
+         */
+        @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
+        public Builder(Class<T> clazz) {
+            this.clazz = clazz;
+            fromObject = x -> {
+                throw new UnsupportedOperationException("fromObject not implemented");
+            };
+            toPromptString = (a, b) -> {
+                throw new UnsupportedOperationException("toPromptString not implemented");
+            };
+            fromPromptString = x -> {
+                throw new UnsupportedOperationException("fromPromptString not implemented");
+            };
+        }
+
+        /**
+         * Make this builder a proxy for another type converter.
+         *
+         * @return this builder
+         */
+        public Builder<T> proxyGlobalType() {
+            ContextVariableType<T> existingType = ContextVariableTypes
+                .getGlobalVariableTypeForClass(
+                    clazz);
+            if (existingType == null) {
+                throw new SKException(
+                    "Asked to proxy a global type that does not exist: " + clazz.getName());
+            }
+            return proxyType(existingType.getConverter());
+        }
+
+        /**
+         * Make this builder a proxy for another type converter.
+         *
+         * @param proxy the proxy type converter
+         * @return this builder
+         */
+        public Builder<T> proxyType(ContextVariableTypeConverter<T> proxy) {
+            this.fromObject = proxy.fromObject;
+            this.toPromptString = proxy.toPromptString;
+            this.fromPromptString = proxy.fromPromptString;
+            return this;
+        }
+
+        /**
+         * Set the function to convert an object to the type.
+         *
+         * @param fromObject the function to convert an object to the type
+         * @return this builder
+         */
+        public Builder<T> fromObject(Function<Object, T> fromObject) {
+            this.fromObject = fromObject;
+            return this;
+        }
+
+        /**
+         * Set the function to convert the type to a prompt string.
+         *
+         * @param toPromptString the function to convert the type to a prompt string
+         * @return this builder
+         */
+        public Builder<T> toPromptString(Function<T, String> toPromptString) {
+            this.toPromptString = (ignore, a) -> toPromptString.apply(a);
+            return this;
+        }
+
+        /**
+         * Set the function to convert a prompt string to the type.
+         *
+         * @param fromPromptString the function to convert a prompt string to the type
+         * @return this builder
+         */
+        public Builder<T> fromPromptString(Function<String, T> fromPromptString) {
+            this.fromPromptString = fromPromptString;
+            return this;
+        }
+
+        /**
+         * Build the context variable type converter.
+         *
+         * @return the context variable type converter
+         */
+        public ContextVariableTypeConverter<T> build() {
+            return new ContextVariableTypeConverter<>(
+                clazz,
+                fromObject,
+                toPromptString,
+                fromPromptString);
         }
     }
 }

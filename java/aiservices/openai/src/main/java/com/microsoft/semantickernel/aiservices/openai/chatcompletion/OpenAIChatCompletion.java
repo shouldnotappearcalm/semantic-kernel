@@ -6,7 +6,9 @@ import com.azure.ai.openai.models.ChatChoice;
 import com.azure.ai.openai.models.ChatCompletions;
 import com.azure.ai.openai.models.ChatCompletionsFunctionToolCall;
 import com.azure.ai.openai.models.ChatCompletionsFunctionToolDefinition;
+import com.azure.ai.openai.models.ChatCompletionsJsonResponseFormat;
 import com.azure.ai.openai.models.ChatCompletionsOptions;
+import com.azure.ai.openai.models.ChatCompletionsTextResponseFormat;
 import com.azure.ai.openai.models.ChatCompletionsToolCall;
 import com.azure.ai.openai.models.ChatCompletionsToolDefinition;
 import com.azure.ai.openai.models.ChatRequestAssistantMessage;
@@ -20,9 +22,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.semantickernel.Kernel;
+import com.microsoft.semantickernel.aiservices.openai.implementation.OpenAIRequestSettings;
 import com.microsoft.semantickernel.contextvariables.ContextVariable;
 import com.microsoft.semantickernel.contextvariables.ContextVariableTypes;
 import com.microsoft.semantickernel.exceptions.AIException;
+import com.microsoft.semantickernel.exceptions.AIException.ErrorCodes;
 import com.microsoft.semantickernel.exceptions.SKException;
 import com.microsoft.semantickernel.hooks.KernelHooks;
 import com.microsoft.semantickernel.hooks.PostChatCompletionEvent;
@@ -154,7 +158,15 @@ public class OpenAIChatCompletion implements ChatCompletionService {
             .getOptions();
 
         Mono<List<? extends ChatMessageContent>> result = client
-            .getChatCompletions(getModelId(), options)
+            .getChatCompletionsWithResponse(getModelId(), options,
+                OpenAIRequestSettings.getRequestOptions())
+            .flatMap(completionsResult -> {
+                if (completionsResult.getStatusCode() >= 400) {
+                    return Mono.error(new AIException(ErrorCodes.SERVICE_ERROR,
+                        "Request failed: " + completionsResult.getStatusCode()));
+                }
+                return Mono.just(completionsResult.getValue());
+            })
             .flatMap(completions -> {
                 List<ChatResponseMessage> responseMessages = completions
                     .getChoices()
@@ -396,6 +408,20 @@ public class OpenAIChatCompletion implements ChatCompletionService {
                     : promptExecutionSettings.getStopSequences())
             .setUser(promptExecutionSettings.getUser())
             .setLogitBias(logit);
+
+        if (promptExecutionSettings.getResponseFormat() != null) {
+            switch (promptExecutionSettings.getResponseFormat()) {
+                case JSON_OBJECT:
+                    options.setResponseFormat(new ChatCompletionsJsonResponseFormat());
+                    break;
+                case TEXT:
+                    options.setResponseFormat(new ChatCompletionsTextResponseFormat());
+                    break;
+                default:
+                    throw new SKException(
+                        "Unknown response format: " + promptExecutionSettings.getResponseFormat());
+            }
+        }
 
         return options;
     }

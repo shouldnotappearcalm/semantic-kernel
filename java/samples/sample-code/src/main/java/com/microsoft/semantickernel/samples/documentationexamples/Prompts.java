@@ -9,6 +9,7 @@ import com.microsoft.semantickernel.Kernel;
 import com.microsoft.semantickernel.services.chatcompletion.ChatCompletionService;
 
 public class Prompts {
+
     private static final String CLIENT_KEY = System.getenv("CLIENT_KEY");
     private static final String AZURE_CLIENT_KEY = System.getenv("AZURE_CLIENT_KEY");
 
@@ -47,17 +48,19 @@ public class Prompts {
             What is the intent of this request? %s
             """.formatted(request);
 
+        // @formatter:off
         /*
-         * Uncomment this block to make this example interactive
-         * // <InitialPrompt>
-         * System.out.println("Your request: ");
-         * String request = new Scanner(System.in).nextLine();
-         * String prompt = """
-         * What is the intent of this request? %s
-         * You can choose between SendEmail, SendMessage, CompleteTask, CreateDocument.
-         * """.formatted(request);
-         * // </InitialPrompt>
+         Uncomment this block to make this example interactive
+         // <InitialPrompt>
+         System.out.println("Your request: ");
+         String request = new Scanner(System.in).nextLine();
+         String prompt = """
+         What is the intent of this request? %s
+         You can choose between SendEmail, SendMessage, CompleteTask, CreateDocument.
+         """.formatted(request);
+         // </InitialPrompt>
          */
+        // @formatter:on
 
         System.out.println("0.0 Initial prompt");
         // <InvokeInitialPrompt>
